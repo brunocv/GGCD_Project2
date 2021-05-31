@@ -2,7 +2,7 @@ RATINGS
 
 create external table title_ratings (
 tconst string,
-averageRating decimal,
+averageRating decimal(10,1),
 numVotes integer)
 row format delimited
 fields terminated by '\t'
@@ -66,7 +66,7 @@ RATINGS PARQUET
 
 create table title_ratings_parquet (
 tconst string,
-averageRating decimal,
+averageRating decimal(10,1),
 numVotes integer)
 stored as parquet;
 
