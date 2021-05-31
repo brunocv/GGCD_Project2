@@ -1,0 +1,119 @@
+RATINGS
+
+create external table title_ratings (
+tconst string,
+averageRating decimal,
+numVotes integer)
+row format delimited
+fields terminated by '\t'
+lines terminated by '\n'
+stored as textfile
+location 'hdfs:///ratings'
+tblproperties ("skip.header.line.count"="1");
+
+describe title_ratings; (ver composicao da tabela)
+
+select count(*) from title_ratings; (contar entradas)
+
+
+BASICS
+
+create external table title_basics (
+tconst string,
+titleType string,
+primaryTitle string,
+originalTitle string,
+isAdult boolean,
+startYear integer,
+endYear integer,
+runtimeMinutes integer,
+genres array<string>)
+row format delimited
+fields terminated by '\t'
+collection items terminated by ','
+lines terminated by '\n'
+stored as textfile
+location 'hdfs:///basics'
+tblproperties ("skip.header.line.count"="1");
+
+describe title_basics; (ver composicao da tabela)
+
+select count(*) from title_basics; (contar entradas)
+
+PRINCIPALS
+
+create external table title_principals (
+tconst string,
+ordering integer,
+nconst string,
+category string,
+job string,
+characters string)
+row format delimited
+fields terminated by '\t'
+lines terminated by '\n'
+stored as textfil
+location 'hdfs:///principals'
+tblproperties ("skip.header.line.count"="1");
+
+describe title_principals;
+
+select count(*) from title_principals;
+
+-------------------------------------------------------------------------
+
+RATINGS PARQUET
+
+create table title_ratings_parquet (
+tconst string,
+averageRating decimal,
+numVotes integer)
+stored as parquet;
+
+insert overwrite table title_ratings_parquet select * from title_ratings;
+
+select * from title_ratings_parquet limit 10;
+
+BASICS PARQUET
+
+create table title_basics_parquet_partitioned (
+tconst string,
+primaryTitle string,
+originalTitle string,
+isAdult boolean,
+startYear integer,
+endYear integer,
+runtimeMinutes integer,
+genres array<string>)
+partitioned by (titleType string)
+stored as parquet;
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+insert overwrite table title_basics_parquet_partitioned partition(titleType) select tconst,
+primaryTitle,
+originalTitle,
+isAdult,
+startYear,
+endYear,
+runtimeMinutes,
+genres,
+titleType
+from title_basics;
+
+select * from title_basics_parquet_partitioned limit 10;
+
+PRINCIPALS PARQUET
+
+create table title_principals_parquet (
+tconst string,
+ordering integer,
+nconst string,
+category string,
+job string,
+characters string)
+stored as parquet;
+
+insert overwrite table title_principals_parquet select * from title_princiapals;
+
+select * from title_principals_parquet limit 10;

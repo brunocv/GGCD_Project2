@@ -1,0 +1,56 @@
+GOOGLE CLOUD
+
+1- gcloud auth login
+
+2- gcloud auth application-default login
+
+3- criar projeto "spark-tp2"
+
+4- google console -> dataproc -> criar cluster (regiao: europe-west1 zone: europe-west1-b
+
+5- gcloud config set project spark-tp2
+
+6- gcloud compute ssh sparktp2-m
+
+7- Hive precisa de pastas separadas
+curl https://datasets.imdbws.com/title.ratings.tsv.gz | gunzip | hdfs dfs -put - /ratings/title.ratings.tsv
+curl https://datasets.imdbws.com/title.principals.tsv.gz | gunzip | hdfs dfs -put - /principals/title.principals.tsv
+curl https://datasets.imdbws.com/title.basics.tsv.gz | gunzip | hdfs dfs -put - /basics/title.basics.tsv
+hdfs dfs -ls /
+
+8- (tudo junto)
+gcloud compute ssh sparktp2-m -- beeline -u "jdbc:hive2://localhost:10000"
+
+9- criar tabelas
+create external....
+
+create table... e transferir da external para esta nova parquet
+
+10-
+hdfs dfs -ls /user/hive/warehouse (para ver o warehouse com os dados)
+
+11- dentro do projeto do intelliJ executar:
+gcloud dataproc jobs submit spark --jars target/GGCD_Spark-1.0-SNAPSHOT.jar --class parte2.Queries --cluster sparktp2 --region europe-west1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+docker-machine create --driver google --google-project spark-tp2 --google-zone europe-west1-b --google-machine-type n1-standard-2 --google-disk-size=100 --google-disk-type=pd-ssd master
+docker-machine create --driver google --google-project spark-tp2 --google-zone europe-west1-b --google-machine-type n1-standard-2 --google-disk-size=100 --google-disk-type=pd-ssd worker1
+docker-machine create --driver google --google-project spark-tp2 --google-zone europe-west1-b --google-machine-type n1-standard-2 --google-disk-size=100 --google-disk-type=pd-ssd worker2
+
