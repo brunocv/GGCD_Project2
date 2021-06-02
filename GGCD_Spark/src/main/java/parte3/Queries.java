@@ -7,13 +7,28 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.sources.In;
+import scala.Serializable;
 import scala.Tuple2;
+import scala.reflect.io.Streamable;
 
 import javax.xml.crypto.Data;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+class ComparadorTuplos implements Comparator<Tuple2<String, BigDecimal>>, Serializable {
+    final static ComparadorTuplos INSTANCE = new ComparadorTuplos();
+    public int compare(Tuple2<String, BigDecimal> t1, Tuple2<String, BigDecimal> t2) {
+        return -t1._2.compareTo(t2._2);
+    }
+}
 
 public class Queries {
+
 
     public static void main(String[] args) {
 
@@ -72,7 +87,7 @@ public class Queries {
                 .cache();
 
         //actor, mean(rating)
-        JavaPairRDD<String, Float> ator_class = title_by_actor.join(title_rating).mapToPair( l -> new Tuple2<>(l._2._1, new Tuple2<>(l._2._2,1)))
+        JavaPairRDD<String, Float> actor_class = title_by_actor.join(title_rating).mapToPair( l -> new Tuple2<>(l._2._1, new Tuple2<>(l._2._2,1)))
                 .reduceByKey(
                         (Function2<Tuple2<BigDecimal, Integer>, Tuple2<BigDecimal, Integer>, Tuple2<BigDecimal, Integer>>)
                                 (i1, i2) -> new Tuple2<>(new BigDecimal(i1._1.floatValue() + i2._1.floatValue()), i1._2+ i2._2))
@@ -81,7 +96,24 @@ public class Queries {
                 .cache();
 
         // ############################ QUERY 2 #################################
+        //JavaPairRDD<String, BigDecimal> title_rating (title,rating) && JavaPairRDD<String, String> title_by_actor(title,actor)
+
+        JavaPairRDD<String, List<Tuple2<String,BigDecimal>>> hits = title_by_actor.join(title_rating)
+                .mapToPair(l -> new Tuple2<>(l._2._1, new Tuple2<>(l._1,l._2._2))) //actor, (movie,rating)
+                .groupByKey()
+                .mapValues( v -> {
+                    List<Tuple2<String, BigDecimal>> result = new ArrayList<Tuple2<String, BigDecimal>>();
+                    v.forEach(result::add);
+                    result.sort(new ComparadorTuplos());
+                    return result.subList(0,Integer.min(result.size(),10));
+                })
+                //.saveAsTextFile("hdfs:///resultado30");
+                .cache();
+
         // ############################ QUERY 3 #################################
+
+        
+
         // ############################ QUERY 4 #################################
 
         // Actor [Actor]
@@ -92,6 +124,8 @@ public class Queries {
                 //.saveAsTextFile("hdfs:///resultado7")
                 .cache();
 
+        // ############################ RSULTADO FINAL #################################
+        actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(friends).saveAsTextFile("hdfs:///resultadofinal");
     }
 
 
