@@ -52,7 +52,7 @@ characters string)
 row format delimited
 fields terminated by '\t'
 lines terminated by '\n'
-stored as textfil
+stored as textfile
 location 'hdfs:///principals'
 tblproperties ("skip.header.line.count"="1");
 
@@ -60,6 +60,26 @@ describe title_principals;
 
 select count(*) from title_principals;
 
+NAME_BASICS
+
+create external table name_basics (
+nconst string,
+primaryName string,
+birthYear integer,
+deathYear integer,
+primaryProfession array<string>,
+knownForTitles array<string>)
+row format delimited
+fields terminated by '\t'
+collection items terminated by ','
+lines terminated by '\n'
+stored as textfile
+location 'hdfs:///name'
+tblproperties ("skip.header.line.count"="1");
+
+describe name_basics;
+
+select count(*) from name_basics;
 -------------------------------------------------------------------------
 
 RATINGS PARQUET
@@ -76,7 +96,7 @@ select * from title_ratings_parquet limit 10;
 
 BASICS PARQUET
 
-create table title_basics_parquet_partitioned (
+create table title_basics_parquet (
 tconst string,
 primaryTitle string,
 originalTitle string,
@@ -85,21 +105,9 @@ startYear integer,
 endYear integer,
 runtimeMinutes integer,
 genres array<string>)
-partitioned by (titleType string)
 stored as parquet;
 
-set hive.exec.dynamic.partition.mode=nonstrict;
-
-insert overwrite table title_basics_parquet_partitioned partition(titleType) select tconst,
-primaryTitle,
-originalTitle,
-isAdult,
-startYear,
-endYear,
-runtimeMinutes,
-genres,
-titleType
-from title_basics;
+insert overwrite table title_basics_parquet select * from title_basics;
 
 select * from title_basics_parquet_partitioned limit 10;
 
@@ -114,6 +122,21 @@ job string,
 characters string)
 stored as parquet;
 
-insert overwrite table title_principals_parquet select * from title_princiapals;
+insert overwrite table title_principals_parquet select * from title_principals;
 
 select * from title_principals_parquet limit 10;
+
+NAME BASICS
+
+create table name_basics_parquet (
+nconst string,
+primaryName string,
+birthYear integer,
+deathYear integer,
+primaryProfession array<string>,
+knownForTitles array<string>)
+stored as parquet;
+
+nsert overwrite table name_basics_parquet select * from name_basics;
+
+select * from name_basics_parquet limit 10;

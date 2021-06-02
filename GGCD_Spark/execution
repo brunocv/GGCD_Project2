@@ -16,6 +16,7 @@ GOOGLE CLOUD
 curl https://datasets.imdbws.com/title.ratings.tsv.gz | gunzip | hdfs dfs -put - /ratings/title.ratings.tsv
 curl https://datasets.imdbws.com/title.principals.tsv.gz | gunzip | hdfs dfs -put - /principals/title.principals.tsv
 curl https://datasets.imdbws.com/title.basics.tsv.gz | gunzip | hdfs dfs -put - /basics/title.basics.tsv
+curl https://datasets.imdbws.com/name.basics.tsv.gz| gunzip | hdfs dfs -put - /name/name.basics.tsv
 hdfs dfs -ls /
 
 8- (tudo junto)
@@ -30,7 +31,8 @@ create table... e transferir da external para esta nova parquet
 hdfs dfs -ls /user/hive/warehouse (para ver o warehouse com os dados)
 
 11- dentro do projeto do intelliJ executar:
-gcloud dataproc jobs submit spark --jars target/GGCD_Spark-1.0-SNAPSHOT.jar --class parte2.Queries --cluster sparktp2 --region europe-west1
+Parte 2 -> gcloud dataproc jobs submit spark --jars target/GGCD_Spark-1.0-SNAPSHOT.jar --class parte2.Queries --cluster sparktp2 --region europe-west1
+Parte 3 -> gcloud dataproc jobs submit spark --jars target/GGCD_Spark-1.0-SNAPSHOT.jar --class parte3.Queries --cluster sparktp2 --region europe-west1
 
 
 
