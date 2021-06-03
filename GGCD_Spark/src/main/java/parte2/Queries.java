@@ -5,11 +5,21 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.sql.SparkSession;
+import scala.Serializable;
 import scala.Tuple2;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+
+class ComparadorTuplosConta implements Comparator<Tuple2<Object, Integer>>, Serializable {
+    final static ComparadorTuplosConta INSTANCE = new ComparadorTuplosConta();
+    public int compare(Tuple2<Object, Integer> t1, Tuple2<Object, Integer> t2) {
+        return -t1._2.compareTo(t2._2);
+    }
+}
 
 public class Queries {
 
@@ -32,7 +42,7 @@ public class Queries {
 
         // ############################################### QUERY 1 ############################################
 
-        JavaPairRDD<Object, Object> query1 = spark.table("title_basics_parquet").toJavaRDD()
+        JavaPairRDD<String, Tuple2<Object,Integer>> query1 = spark.table("title_basics_parquet").toJavaRDD()
                 .filter(l -> !l.isNullAt(8) && !l.isNullAt(5))
                 .flatMapToPair(l -> {
                     List<String> f = l.getList(8);
@@ -40,15 +50,18 @@ public class Queries {
                             .map(g -> new Tuple2<>(new Tuple2<>(g,get_decade(l.getInt(5))), 1)).iterator();
                 })
                 .reduceByKey((i, j) -> i + j)
-                .mapToPair(l -> l.swap()).sortByKey(false)
-                .mapToPair(l -> new Tuple2<>(l._2()._2(), new Tuple2<>(l._2()._1(),l._1())))
-                .groupByKey().sortByKey(false)
-                .mapToPair(l -> new Tuple2<>(l._1(), Iterables.get(l._2(),0)));
+                .mapToPair( l -> new Tuple2<>(l._1._2, new Tuple2<>(l._1._1,l._2)))
+                .groupByKey()
+                .mapValues( v -> {
+                    List<Tuple2<Object, Integer>> result = new ArrayList<Tuple2<Object, Integer>>();
+                    v.forEach(result::add);
+                    result.sort(new ComparadorTuplosConta());
+                    return result.get(0);
+                })
+                .sortByKey(false);
 
-        List<Tuple2<Object, Object>> query1_result = query1.collect();
+        List<Tuple2<String, Tuple2<Object,Integer>>> query1_result = query1.collect();
         query1_result.forEach(System.out::println);
-
-
 
         // ############################################### QUERY 2 ############################################
 
@@ -73,7 +86,7 @@ public class Queries {
         // ############################################### QUERY 3 ############################################
 
         List<Tuple2<String,Integer>> query3 = spark.table("title_principals_parquet").toJavaRDD()
-                .filter(l -> !l.isNullAt(3) && (l.getString(3).equals("actor") || l.getString(3).equals("actress")))
+                .filter(l -> !l.isNullAt(3) && (l.getString(3).equals("actor") || l.getString(3).equals("actress") || l.getString(3).equals("self")))
                 .mapToPair(l -> new Tuple2<>(l.getString(2), 1))
                 .reduceByKey((i, j) -> i + j)
                 .mapToPair(l-> l.swap()).sortByKey(false)
@@ -81,12 +94,6 @@ public class Queries {
                 .take(10);
 
         query3.forEach(System.out::println);
-
-
-
-
-
-
 
 
     }

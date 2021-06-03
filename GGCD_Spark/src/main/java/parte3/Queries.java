@@ -27,6 +27,13 @@ class ComparadorTuplos implements Comparator<Tuple2<String, BigDecimal>>, Serial
     }
 }
 
+class ComparadorTuplosTitles implements Comparator<Tuple2<String, Integer>>, Serializable {
+    final static ComparadorTuplosTitles INSTANCE = new ComparadorTuplosTitles();
+    public int compare(Tuple2<String, Integer> t1, Tuple2<String, Integer> t2) {
+        return -t1._2.compareTo(t2._2);
+    }
+}
+
 public class Queries {
 
 
@@ -111,8 +118,35 @@ public class Queries {
                 .cache();
 
         // ############################ QUERY 3 #################################
+        //usar number_of_titles
+        //actor, (name , decade)
 
-        
+        JavaPairRDD<String, Tuple2<String, Integer>> actors_info_decade = spark.table("name_basics_parquet").toJavaRDD()
+                .mapToPair(l -> new Tuple2<>(l.getString(0),
+                        new Tuple2<>(l.getString(1), l.isNullAt(2) ? 190 : (int) (l.getInt(2)/10))))
+                //.saveAsTextFile("hdfs:///resultado1");
+                .cache();
+
+        JavaPairRDD<Integer, List<Tuple2<String, Integer>>> c = actors_info_decade.join(number_of_titles) //(actor, ((nome,decada), number_titles))
+                .mapToPair(l -> new Tuple2<>(l._2._1._2, new Tuple2<>(l._2._1._1, l._2._2))) //(decada, (nome, number_titles))
+                .groupByKey()
+                .mapValues( v -> {
+                    List<Tuple2<String, Integer>> result = new ArrayList<Tuple2<String, Integer>>();
+                    v.forEach(result::add);
+                    result.sort(new ComparadorTuplosTitles());
+                    return result.subList(0,Integer.min(result.size(),10));
+                })
+                .cache();
+
+        // actor, List<(Nome, titulos)>
+        JavaPairRDD<String, List<Tuple2<String, Integer>>> query3 = actors_info_decade
+                .mapToPair(l -> new Tuple2<>(l._2._2, new Tuple2<>(l._1,l._2._1))) //decade, (actor , name)
+                .join(c) // decade, ((actor , name), List<Actors>)
+                .mapToPair(l -> new Tuple2<>(l._2._1._1, l._2._2))
+                //.saveAsTextFile("hdfs:///resultado1");
+                .cache();
+
+        //query3.saveAsTextFile("hdfs:///resultado_query3");
 
         // ############################ QUERY 4 #################################
 
@@ -125,7 +159,9 @@ public class Queries {
                 .cache();
 
         // ############################ RSULTADO FINAL #################################
-        actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(friends).saveAsTextFile("hdfs:///resultadofinal");
+        //actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(query3).join(friends).saveAsTextFile("hdfs:///resultadofinal");
+        //actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(friends).saveAsTextFile("hdfs:///resultadofinal");
+
     }
 
 

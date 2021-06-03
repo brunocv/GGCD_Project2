@@ -98,6 +98,7 @@ BASICS PARQUET
 
 create table title_basics_parquet (
 tconst string,
+titleType string,
 primaryTitle string,
 originalTitle string,
 isAdult boolean,
