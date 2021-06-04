@@ -33,26 +33,3 @@ hdfs dfs -ls /user/hive/warehouse (para ver o warehouse com os dados)
 11- dentro do projeto do intelliJ executar:
 Parte 2 -> gcloud dataproc jobs submit spark --jars target/GGCD_Spark-1.0-SNAPSHOT.jar --class parte2.Queries --cluster sparktp2 --region europe-west1
 Parte 3 -> gcloud dataproc jobs submit spark --jars target/GGCD_Spark-1.0-SNAPSHOT.jar --class parte3.Queries --cluster sparktp2 --region europe-west1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-docker-machine create --driver google --google-project spark-tp2 --google-zone europe-west1-b --google-machine-type n1-standard-2 --google-disk-size=100 --google-disk-type=pd-ssd master
-docker-machine create --driver google --google-project spark-tp2 --google-zone europe-west1-b --google-machine-type n1-standard-2 --google-disk-size=100 --google-disk-type=pd-ssd worker1
-docker-machine create --driver google --google-project spark-tp2 --google-zone europe-west1-b --google-machine-type n1-standard-2 --google-disk-size=100 --google-disk-type=pd-ssd worker2
-

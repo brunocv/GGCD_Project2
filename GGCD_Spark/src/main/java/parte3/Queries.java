@@ -105,14 +105,19 @@ public class Queries {
         // ############################ QUERY 2 #################################
         //JavaPairRDD<String, BigDecimal> title_rating (title,rating) && JavaPairRDD<String, String> title_by_actor(title,actor)
 
-        JavaPairRDD<String, List<Tuple2<String,BigDecimal>>> hits = title_by_actor.join(title_rating)
+        JavaPairRDD<String, String> hits = title_by_actor.join(title_rating)
                 .mapToPair(l -> new Tuple2<>(l._2._1, new Tuple2<>(l._1,l._2._2))) //actor, (movie,rating)
                 .groupByKey()
                 .mapValues( v -> {
                     List<Tuple2<String, BigDecimal>> result = new ArrayList<Tuple2<String, BigDecimal>>();
                     v.forEach(result::add);
                     result.sort(new ComparadorTuplos());
-                    return result.subList(0,Integer.min(result.size(),10));
+                    result = result.subList(0,Integer.min(result.size(),10));
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Top 10 Titles: ");
+                    for (Tuple2<String,BigDecimal> aux : result)
+                        sb.append("("+ aux._1 +","+aux._2+")");
+                    return sb.toString();
                 })
                 //.saveAsTextFile("hdfs:///resultado30");
                 .cache();
@@ -127,19 +132,24 @@ public class Queries {
                 //.saveAsTextFile("hdfs:///resultado1");
                 .cache();
 
-        JavaPairRDD<Integer, List<Tuple2<String, Integer>>> c = actors_info_decade.join(number_of_titles) //(actor, ((nome,decada), number_titles))
+        JavaPairRDD<Integer, String> c = actors_info_decade.join(number_of_titles) //(actor, ((nome,decada), number_titles))
                 .mapToPair(l -> new Tuple2<>(l._2._1._2, new Tuple2<>(l._2._1._1, l._2._2))) //(decada, (nome, number_titles))
                 .groupByKey()
                 .mapValues( v -> {
                     List<Tuple2<String, Integer>> result = new ArrayList<Tuple2<String, Integer>>();
                     v.forEach(result::add);
                     result.sort(new ComparadorTuplosTitles());
-                    return result.subList(0,Integer.min(result.size(),10));
+                    result = result.subList(0,Integer.min(result.size(),10));
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Top 10 Decade: ");
+                    for (Tuple2<String,Integer> aux : result)
+                        sb.append("("+ aux._1 +","+aux._2+")");
+                    return sb.toString();
                 })
                 .cache();
 
-        // actor, List<(Nome, titulos)>
-        JavaPairRDD<String, List<Tuple2<String, Integer>>> query3 = actors_info_decade
+        // actor, String -> List<(Nome, titulos)>
+        JavaPairRDD<String, String> query3 = actors_info_decade
                 .mapToPair(l -> new Tuple2<>(l._2._2, new Tuple2<>(l._1,l._2._1))) //decade, (actor , name)
                 .join(c) // decade, ((actor , name), List<Actors>)
                 .mapToPair(l -> new Tuple2<>(l._2._1._1, l._2._2))
@@ -159,7 +169,7 @@ public class Queries {
                 .cache();
 
         // ############################ RSULTADO FINAL #################################
-        //actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(query3).join(friends).saveAsTextFile("hdfs:///resultadofinal");
+        actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(query3).join(friends).saveAsTextFile("hdfs:///resultadofinal");
         //actors_info.join(number_of_titles).join(act_years).join(actor_class).join(hits).join(friends).saveAsTextFile("hdfs:///resultadofinal");
 
     }
